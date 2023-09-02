@@ -1,0 +1,81 @@
+service: gymCrawl
+frameworkVersion: '3'
+package:
+  exclude:
+    - node_modules/**
+    - package.json
+    - package-lock.json
+    - .env
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    #환경변수에 NODE_PATH 설정 node_modules 위치
+    NODE_PATH: "./:/opt/node_modules"
+    STAGE: ${opt:stage, 'dev'}
+    REGION: ${self:provider.region}
+  iam:
+    role:
+      statements: ${file(resources/iamRoleStatements.yml):iamRoleStatements}
+custom:
+  stage: ${opt:stage, 'dev'}
+  layer: 'arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:layer:NodeModules:latest'
+
+functions:
+  Crawl:
+    timeout: 900
+    handler: index.handler
+    layers:
+      - ${self:custom.layer}
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
+      - http:
+          path: /{gymName}
+          method: get
+          cors: true
+      - http:
+          path: /default/{gymName}
+          method: get
+          cors: true
+      - eventBridge:
+            schedule: cron(*/5 * * * ? *)
+            name: ${self:provider.stage}-GymsCronSchedule
+            description: Trigger Lambda
+            enabled: false
+
+resources: # CloudFormation template syntax from here on.
+  Resources:
+    gymClassTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-GymClass-Table
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: gym
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+#          - AttributeName: createdAt
+#            AttributeType: N
+        KeySchema:
+          - AttributeName: gym
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+#        GlobalSecondaryIndexes:
+#          - IndexName: gymIndex
+#            KeySchema:
+#              - AttributeName: gym
+#                KeyType: HASH
+#              - AttributeName: createdAt
+#                KeyType: RANGE
+#            Projection:
+#              ProjectionType: 'ALL'
+plugins:
+  - serverless-latest-layer-version
+  - serverless-offline
