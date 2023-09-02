@@ -1,4 +1,4 @@
-const { getAvails, checkAvail } = require('crawl')
+const { getAvails, checkAvail, getSingle } = require('crawl')
 const { gymHomeUrls, gymList} = require('gyms')
 const {addGymClasses, getClassByGym} = require('gymClasses/gymClasses')
 module.exports.handler = async (event) => {
@@ -36,7 +36,10 @@ module.exports.handler = async (event) => {
             ),
         };
     } else { // eventbridge
-        await addGymClasses()
+        const my = 'https://sports.idongjak.or.kr/home/171?category2=ALL&comcd=DONGJAK03&center=DONGJAK03&category1=01&action=read&class_cd=01845&item_cd=I000662'
+        await getSingle(my)
+        // await addGymClasses()
+
      }
 
 };

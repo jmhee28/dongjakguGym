@@ -46,8 +46,17 @@ functions:
             schedule: cron(*/5 * * * ? *)
             name: ${self:provider.stage}-GymsCronSchedule
             description: Trigger Lambda
-            enabled: false
-
+            enabled: true
+#  CrawlForMe:
+#    handler: index.handler
+#    layers:
+#      - ${self:custom.layer}
+#    events:
+#      - eventBridge:
+#          schedule: cron(*/5 * * * ? *)
+#          name: ${self:provider.stage}-GymsCronSchedule
+#          description: Trigger Lambda
+#          enabled: true
 resources: # CloudFormation template syntax from here on.
   Resources:
     gymClassTable:

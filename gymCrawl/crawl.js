@@ -1,6 +1,6 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
-
+const {sendMail} = require("mail")
 // const gymHomeUrl = "https://sports.idongjak.or.kr/home/171?center=DONGJAK07&category1=ALL&category2=ALL&title=&train_day="
 const hrefList = [];
 const getAvails = async (gymHomeUrl) => {
@@ -29,7 +29,37 @@ const getAvails = async (gymHomeUrl) => {
         console.error(error);
     }
 };
+const getSingle = async (url) =>{
+    try {
+        const response = await axios.get(url);
+        const $ = cheerio.load(response.data);
+        const dlElements = $("dl");
+        let infos = {}
+        dlElements.each((i, element) => {
+            const ddElements = $(element).find("dd");
+            const dtElements = $(element).find("dt");
 
+
+            const regex = /\d+/;
+            ddElements.each((j, ddElement) => {
+                const dt = $(dtElements[j]).text().trim()
+                // const dd = $(ddElements[j]).text()
+                const text = $(ddElements[j]).contents()
+                    .filter((index, el) => el.nodeType === 3) // Filter out non-text nodes (comments)
+                    .map((index, el) => $(el).text().trim())
+                    .get()
+                    .join('');
+                infos[dt] = text
+            });
+            if(/\d/.test(infos["잔여"])){
+                 sendMail(infos["강좌명"])
+            }
+        });
+        console.log("잔여:::", infos["강좌명"] ,infos["잔여"])
+    } catch (error) {
+        console.error(error);
+    }
+}
 const checkAvail = async (url) =>{
     try {
         // 1. Make an HTTP request to the URL
@@ -69,6 +99,6 @@ const checkAvail = async (url) =>{
     }
 }
 module.exports = {
-    getAvails, checkAvail
+    getAvails, checkAvail, getSingle
 }
 // getHtml();
